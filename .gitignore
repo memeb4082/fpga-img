@@ -1,0 +1,69 @@
+# ========================
+# Vivado Generated Files
+# ========================
+
+# Project files (re-generated)
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.gen/
+*.xpr
+*.str
+
+# Logs & reports
+*.log
+*.jou
+
+# Backup / temp files
+*~
+*.backup
+*.bak
+
+# Simulation outputs
+*.wdb
+*.vcd
+*.pb
+
+# IP cache (can be large, safe to ignore)
+.ip_user_files/
+.cache/
+
+# SDK / Vitis / export artifacts
+.sdk/
+.vitis/
+*.hdf
+*.xsa
+
+# Bitstreams (optional — include if you want reproducibility)
+*.bit
+*.bin
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# VS Code
+.vscode/
+
+# ========================
+# KEEP THESE (IMPORTANT)
+# ========================
+
+# Source files (DO NOT IGNORE)
+!*.vhd
+!*.vhdl
+!*.v
+!*.sv
+
+# Constraints
+!*.xdc
+
+# Scripts (for reproducibility)
+!*.tcl
+
+# Block design sources (if exported)
+!*.bd
