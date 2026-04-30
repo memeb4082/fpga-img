@@ -31,13 +31,21 @@ module line_buffer(
 );
 
 reg [7:0] line [511:0];  // line buffer
-reg wr_ptr;
-reg rd_ptr;
+reg [8:0] wr_ptr;
+reg [8:0] rd_ptr;
+integer dbg_lb_f;
+initial dbg_lb_f = 0;
+initial begin
+    dbg_lb_f = $fopen("linebuf_dbg.txt","w");
+end
 
 always @(posedge i_clk)
 begin
     if (i_data_valid)
         line [wr_ptr] <= i_data;
+    if (i_data_valid) begin
+        $fwrite(dbg_lb_f, "LINEBUF: time=%0t write idx=%0d data=%0d\n", $time, wr_ptr, i_data);
+    end
 end
 
 always @(posedge i_clk)
@@ -55,6 +63,9 @@ begin
     if(i_rst)
         rd_ptr <= 'd0;
     else if(i_rd_data)
-        rd_ptr <= wr_ptr + 'd1;
+        rd_ptr <= rd_ptr + 'd1;
+    if (i_rd_data) begin
+        $fwrite(dbg_lb_f, "LINEBUF: time=%0t read idx=%0d out={%0d,%0d,%0d}\n", $time, rd_ptr, line[rd_ptr], line[rd_ptr+1], line[rd_ptr+2]);
+    end
 end
 endmodule

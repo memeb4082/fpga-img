@@ -21,7 +21,7 @@ else
 fi
 export LD_LIBRARY_PATH
 
-HD_PWD='/home/dinal/image_processing/image_processing.runs/output_buffer_synth_1'
+HD_PWD='/home/dinal/Documents/fpga-img/image_processing.runs/output_buffer_synth_1'
 cd "$HD_PWD"
 
 HD_LOG=runme.log

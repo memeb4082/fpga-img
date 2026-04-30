@@ -4,7 +4,7 @@
     "xci_name": "output_buffer",
     "component_reference": "xilinx.com:ip:fifo_generator:13.2",
     "ip_revision": "14",
-    "gen_directory": "./",
+    "gen_directory": ".",
     "parameters": {
       "component_parameters": {
         "Component_Name": [ { "value": "output_buffer", "resolve_type": "user", "usage": "all" } ],
@@ -397,7 +397,7 @@
         "IPCONTEXT": [ { "value": "IP_Flow" } ],
         "IPREVISION": [ { "value": "14" } ],
         "MANAGED": [ { "value": "TRUE" } ],
-        "OUTPUTDIR": [ { "value": "./" } ],
+        "OUTPUTDIR": [ { "value": "." } ],
         "SELECTEDSIMMODEL": [ { "value": "" } ],
         "SHAREDDIR": [ { "value": "." } ],
         "SWVERSION": [ { "value": "2025.2" } ],
@@ -502,5 +502,5 @@
       }
     }
   },
-  "checksum": "91d2532a"
+  "checksum": "f3992752"
 }
