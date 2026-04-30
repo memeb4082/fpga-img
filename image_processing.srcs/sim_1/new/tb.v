@@ -3,7 +3,7 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 05/01/2026 01:26:24 AM
+// Create Date: 04/02/2020 08:11:41 PM
 // Design Name: 
 // Module Name: tb
 // Project Name: 
@@ -31,10 +31,6 @@ module tb(
  reg reset;
  reg [7:0] imgData;
  integer file,file1,i;
-integer dbgfile;
-integer dbg_pix_f;
-integer dbg_conv_f;
-integer dbg_in;
  reg imgDataValid;
  integer sentSize;
  wire intr;
@@ -59,15 +55,8 @@ integer dbg_in;
     #100;
     reset = 1;
     #100;
-    // VCD dump for post-mortem inspection
-    $dumpfile("trace.vcd");
-    $dumpvars(0, tb);
     file = $fopen("lena_gray.bmp","rb");
     file1 = $fopen("blurred_lena.bmp","wb");
-    dbgfile = $fopen("tb_out.txt","w");
-    dbg_pix_f = $fopen("tb_pix.txt","w");
-    dbg_conv_f = $fopen("tb_conv.txt","w");
-    dbg_in = $fopen("tb_in.txt","w");
     for(i=0;i<`headerSize;i=i+1)
     begin
         $fscanf(file,"%c",imgData);
@@ -77,8 +66,7 @@ integer dbg_in;
     for(i=0;i<4*512;i=i+1)
     begin
         @(posedge clk);
-            $fscanf(file,"%c",imgData);
-            if (i < 32) $fwrite(dbg_in, "%0d\n", imgData);
+        $fscanf(file,"%c",imgData);
         imgDataValid <= 1'b1;
     end
     sentSize = 4*512;
@@ -91,10 +79,6 @@ integer dbg_in;
         begin
             @(posedge clk);
             $fscanf(file,"%c",imgData);
-            // log pix window from top module when we assert valid
-            if (i < 4) begin
-                $fwrite(dbg_pix_f, "pix_in_cycle %0d: %0h\n", i, dut.pix_data);
-            end
             imgDataValid <= 1'b1;    
         end
         @(posedge clk);
@@ -128,37 +112,20 @@ integer dbg_in;
  begin
      if(outDataValid)
      begin
-            $fwrite(file1,"%c",outData);
-            if (receivedData < 16) $display("TB: outData[%0d]=%0d", receivedData, outData);
-            if (receivedData < 256) $fwrite(dbgfile,"%0d\n", outData);
-        // also log conv output from top-level net
-        if (receivedData < 256) $fwrite(dbg_conv_f, "conv_out %0d: %0h valid=%0d out=%0d\n", receivedData, dut.convolved_data, dut.convolved_data_valid, outData);
-            receivedData = receivedData+1;
+         $fwrite(file1,"%c",outData);
+         receivedData = receivedData+1;
      end 
      if(receivedData == `imageSize)
      begin
         $fclose(file1);
-        if (dbg_in) $fclose(dbg_in);
-       if (dbgfile) $fclose(dbgfile);
-       if (dbg_pix_f) $fclose(dbg_pix_f);
-       if (dbg_conv_f) $fclose(dbg_conv_f);
         $stop;
      end
  end
-
-// Monitor pix_data and conv outputs to simulator console/log
-always @(posedge clk) begin
-    if (dut.pix_data_valid) begin
-        $display("TB-MON: time=%0t pix_data=%h", $time, dut.pix_data);
-    end
-    if (dut.convolved_data_valid) begin
-        $display("TB-MON: time=%0t conv=%0d valid=%0d", $time, dut.convolved_data, dut.convolved_data_valid);
-    end
-end
+ 
 
  image_process_top dut(
     .axi_clk(clk),
-    .axi_rst_n(reset),
+    .axi_reset_n(reset),
     //slave interface
     .i_data_valid(imgDataValid),
     .i_data(imgData),

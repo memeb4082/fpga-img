@@ -1,166 +1,234 @@
 `timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 04/01/2020 10:53:27 AM
+// Design Name: 
+// Module Name: imageControl
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
 
 module image_control(
-    input               i_clk,
-    input               i_rst,
-    input[7:0]          i_pixbuf,
-    input               i_pixbuf_valid,
-    output reg[71:0]    o_pixbuf,
-    output              o_pixbuf_valid,
-    output reg          o_intr
+input                    i_clk,
+input                    i_rst,
+input [7:0]              i_pixel_data,
+input                    i_pixel_data_valid,
+output reg [71:0]        o_pixel_data,
+output                   o_pixel_data_valid,
+output reg               o_intr
 );
-    reg[8:0]        pix_counter;
-    reg[1:0]        curr_line_buffer_w;
-    reg[3:0]        line_buffer_data_valid;
-    reg[3:0]        line_buff_rd_data;
-    reg[1:0]        curr_line_buffer_r;
-    wire[23:0]      lb_data[3:0];
-    reg[8:0]        rd_counter;
-    reg             rd_line_buffer;
-    reg[11:0]       total_pix_counter;
-    reg             rd_state;
-    integer dbg_ic_f;
-    initial dbg_ic_f = 0;
-    initial begin
-        dbg_ic_f = $fopen("image_ctrl_dbg.txt","w");
-    end
 
-    integer i;
+reg [8:0] pixelCounter;
+reg [1:0] currentWrLineBuffer;
+reg [3:0] lineBuffDataValid;
+reg [3:0] lineBuffRdData;
+reg [1:0] currentRdLineBuffer;
+wire [23:0] lb0data;
+wire [23:0] lb1data;
+wire [23:0] lb2data;
+wire [23:0] lb3data;
+reg [8:0] rdCounter;
+reg rd_line_buffer;
+reg [11:0] totalPixelCounter;
+reg rdState;
 
-    localparam IDLE = 'b0, RD_BUFFER = 'b1;
-    assign o_pixbuf_valid = rd_line_buffer;
+localparam IDLE = 'b0,
+           RD_BUFFER = 'b1;
 
-    always @(posedge i_clk)
+assign o_pixel_data_valid = rd_line_buffer;
+
+always @(posedge i_clk)
+begin
+    if(i_rst)
+        totalPixelCounter <= 0;
+    else
     begin
-        if (i_rst)
-            total_pix_counter <= 0;
-        else
-        begin
-            if (i_pixbuf_valid & !rd_line_buffer)
-                total_pix_counter <= total_pix_counter + 1;
-            else if (!i_pixbuf_valid & rd_line_buffer)
-                total_pix_counter <= total_pix_counter - 1;
-        end
+        if(i_pixel_data_valid & !rd_line_buffer)
+            totalPixelCounter <= totalPixelCounter + 1;
+        else if(!i_pixel_data_valid & rd_line_buffer)
+            totalPixelCounter <= totalPixelCounter - 1;
     end
+end
 
-    // monitor incoming pixel writes
-    always @(posedge i_clk) begin
-        if (i_pixbuf_valid) begin
-            $fwrite(dbg_ic_f, "IMG_CTRL: time=%0t pix_in=%0d total_counter=%0d\n", $time, i_pixbuf, total_pix_counter);
-        end
-        if (rd_line_buffer) begin
-            $fwrite(dbg_ic_f, "IMG_CTRL: time=%0t rd_line_buffer active rd_counter=%0d\n", $time, rd_counter);
-        end
-    end
-
-    // State machine
-    always @(posedge i_clk)
+always @(posedge i_clk)
+begin
+    if(i_rst)
     begin
-        if (i_rst)
-        begin
-            rd_state        <= IDLE;
-            rd_line_buffer  <= 1'b0;
-            o_intr          <= 1'b0;
-        end
-        else
-        begin
-            case (rd_state)
-            IDLE: begin
-                if (total_pix_counter >= 1536)
+        rdState <= IDLE;
+        rd_line_buffer <= 1'b0;
+        o_intr <= 1'b0;
+    end
+    else
+    begin
+        case(rdState)
+            IDLE:begin
+                o_intr <= 1'b0;
+                if(totalPixelCounter >= 1536)
                 begin
                     rd_line_buffer <= 1'b1;
-                    rd_state       <= RD_BUFFER;
-                    o_intr         <= 1'b1;
+                    rdState <= RD_BUFFER;
                 end
             end
-            RD_BUFFER: begin
-                o_intr <= 1'b0;
-                if (rd_counter == 511)
+            RD_BUFFER:begin
+                if(rdCounter == 511)
                 begin
+                    rdState <= IDLE;
                     rd_line_buffer <= 1'b0;
-                    rd_state       <= IDLE;
+                    o_intr <= 1'b1;
                 end
             end
-            endcase
-        end
+        endcase
     end
-
-    always @(posedge i_clk)
+end
+    
+always @(posedge i_clk)
+begin
+    if(i_rst)
+        pixelCounter <= 0;
+    else 
     begin
-        if (i_rst)
-            pix_counter <= 0;
-        else
-        begin
-            if (i_pixbuf_valid)
-                pix_counter <= pix_counter + 1;
-        end
+        if(i_pixel_data_valid)
+            pixelCounter <= pixelCounter + 1;
     end
+end
 
-    always @(posedge i_clk) begin
-        if (i_rst)
-            curr_line_buffer_w <= 0;
-        else if ((pix_counter == 511) && i_pixbuf_valid)
-            curr_line_buffer_w <= curr_line_buffer_w + 1;
-    end
 
-    always @(*)
+always @(posedge i_clk)
+begin
+    if(i_rst)
+        currentWrLineBuffer <= 0;
+    else
     begin
-        line_buffer_data_valid = 4'h0;
-        line_buffer_data_valid[curr_line_buffer_w] = i_pixbuf_valid;
+        if(pixelCounter == 511 & i_pixel_data_valid)
+            currentWrLineBuffer <= currentWrLineBuffer+1;
     end
+end
 
-    // read window starts from 0 and hits the ==511 condition correctly
-    always @(posedge i_clk)
+
+always @(*)
+begin
+    lineBuffDataValid = 4'h0;
+    lineBuffDataValid[currentWrLineBuffer] = i_pixel_data_valid;
+end
+
+always @(posedge i_clk)
+begin
+    if(i_rst)
+        rdCounter <= 0;
+    else 
     begin
-        if (i_rst)
-            rd_counter <= 0;
-        else
-        begin
-            if (rd_line_buffer)
-                rd_counter <= rd_counter + 1;
-            else
-                rd_counter <= 0;
-        end
+        if(rd_line_buffer)
+            rdCounter <= rdCounter + 1;
     end
+end
 
-    always @(posedge i_clk)
+always @(posedge i_clk)
+begin
+    if(i_rst)
     begin
-        if (i_rst)
-            curr_line_buffer_r <= 0;
-        else
-        begin
-            if (rd_counter == 511 & rd_line_buffer)
-                curr_line_buffer_r <= curr_line_buffer_r + 1;
-        end
+        currentRdLineBuffer <= 0;
     end
-
-    always @(*) begin
-        o_pixbuf = {
-            lb_data[(curr_line_buffer_r + 2) & 2'b11],
-            lb_data[(curr_line_buffer_r + 1) & 2'b11],
-            lb_data[(curr_line_buffer_r + 0) & 2'b11]
-        };
-    end
-
-    always @(*)
+    else
     begin
-        for (i=0; i<4; i=i+1) begin
-            line_buff_rd_data[i] = (i == curr_line_buffer_r) ? 1'b0 : rd_line_buffer;
-        end
+        if(rdCounter == 511 & rd_line_buffer)
+            currentRdLineBuffer <= currentRdLineBuffer + 1;
     end
+end
 
-    genvar j;
-    generate
-        for (j=0; j<4; j=j+1) begin : line_buffers
-            line_buffer lb (
-                .i_clk(i_clk),
-                .i_rst(i_rst),
-                .i_data(i_pixbuf),
-                .i_data_valid(line_buffer_data_valid[j]),
-                .o_data(lb_data[j]),
-                .i_rd_data(line_buff_rd_data[j])
-            );
+
+always @(*)
+begin
+    case(currentRdLineBuffer)
+        0:begin
+            o_pixel_data = {lb2data,lb1data,lb0data};
         end
-    endgenerate
+        1:begin
+            o_pixel_data = {lb3data,lb2data,lb1data};
+        end
+        2:begin
+            o_pixel_data = {lb0data,lb3data,lb2data};
+        end
+        3:begin
+            o_pixel_data = {lb1data,lb0data,lb3data};
+        end
+    endcase
+end
 
+always @(*)
+begin
+    case(currentRdLineBuffer)
+        0:begin
+            lineBuffRdData[0] = rd_line_buffer;
+            lineBuffRdData[1] = rd_line_buffer;
+            lineBuffRdData[2] = rd_line_buffer;
+            lineBuffRdData[3] = 1'b0;
+        end
+       1:begin
+            lineBuffRdData[0] = 1'b0;
+            lineBuffRdData[1] = rd_line_buffer;
+            lineBuffRdData[2] = rd_line_buffer;
+            lineBuffRdData[3] = rd_line_buffer;
+        end
+       2:begin
+             lineBuffRdData[0] = rd_line_buffer;
+             lineBuffRdData[1] = 1'b0;
+             lineBuffRdData[2] = rd_line_buffer;
+             lineBuffRdData[3] = rd_line_buffer;
+       end  
+      3:begin
+             lineBuffRdData[0] = rd_line_buffer;
+             lineBuffRdData[1] = rd_line_buffer;
+             lineBuffRdData[2] = 1'b0;
+             lineBuffRdData[3] = rd_line_buffer;
+       end        
+    endcase
+end
+    
+line_buffer lB0(
+    .i_clk(i_clk),
+    .i_rst(i_rst),
+    .i_data(i_pixel_data),
+    .i_data_valid(lineBuffDataValid[0]),
+    .o_data(lb0data),
+    .i_rd_data(lineBuffRdData[0])
+ ); 
+ 
+ line_buffer lB1(
+     .i_clk(i_clk),
+     .i_rst(i_rst),
+     .i_data(i_pixel_data),
+     .i_data_valid(lineBuffDataValid[1]),
+     .o_data(lb1data),
+     .i_rd_data(lineBuffRdData[1])
+  ); 
+  
+  line_buffer lB2(
+      .i_clk(i_clk),
+      .i_rst(i_rst),
+      .i_data(i_pixel_data),
+      .i_data_valid(lineBuffDataValid[2]),
+      .o_data(lb2data),
+      .i_rd_data(lineBuffRdData[2])
+   ); 
+   
+   line_buffer lB3(
+       .i_clk(i_clk),
+       .i_rst(i_rst),
+       .i_data(i_pixel_data),
+       .i_data_valid(lineBuffDataValid[3]),
+       .o_data(lb3data),
+       .i_rd_data(lineBuffRdData[3])
+    );    
+    
 endmodule
