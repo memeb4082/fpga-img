@@ -118,7 +118,7 @@ module tb(
      if(receivedData == `imageSize)
      begin
         $fclose(file1);
-        $stop;
+//        $stop;
      end
  end
  

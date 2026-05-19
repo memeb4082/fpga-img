@@ -3,3 +3,13 @@
     <Process Command="vivado" Owner="dinal" Host="cachyos-x8664" Pid="266267" HostCore="8" HostMemory="31909624">
     </Process>
 </ProcessHandle>
+<?xml version="1.0"?>
+<ProcessHandle Version="1" Minor="0">
+    <Process Command="vivado" Owner="dinal" Host="archlinux" Pid="482437" HostCore="8" HostMemory="31909728">
+    </Process>
+</ProcessHandle>
+<?xml version="1.0"?>
+<ProcessHandle Version="1" Minor="0">
+    <Process Command="vivado" Owner="dinal" Host="archlinux" Pid="487379" HostCore="8" HostMemory="31909728">
+    </Process>
+</ProcessHandle>
